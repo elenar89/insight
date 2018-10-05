@@ -99,7 +99,7 @@ def stay_or_go(n_clicks, value):
 
     if n_clicks is not None:
         address = str(value)
-        geolocator = GoogleV3(api_key='AIzaSyDPq_4hCqJLFGiQQwh4nmn-5qVfXnc4yWc')
+        geolocator = GoogleV3(api_key='')
         location = geolocator.geocode(address) # contains full address and lat long data
         
         geolocation = Point(location[1][1], location[1][0])
@@ -124,7 +124,7 @@ def create_suggestions(n_clicks, value):
     if n_clicks is not None:
         
         address = str(value)
-        geolocator = GoogleV3(api_key='AIzaSyDPq_4hCqJLFGiQQwh4nmn-5qVfXnc4yWc')
+        geolocator = GoogleV3(api_key='')
         location = geolocator.geocode(address) # contains full address and lat long data
         
         geolocation = Point(location[1][1], location[1][0])
