@@ -8,7 +8,6 @@ import geopandas
 import random
 from random import randint
 import pytz
-#from datetime import datetime
 from folium import FeatureGroup, LayerControl, Map, Marker
 from folium.plugins import HeatMap
 import dash_core_components as dcc
@@ -17,17 +16,18 @@ from dash.dependencies import Input, Output
 from geopy.geocoders import GoogleV3
 from shapely.geometry import Point
 
+### pretty layout
 app = dash.Dash()
 app.css.append_css({
     'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'})
 
 text_style = dict(color='#444', fontFamily='verdana', fontWeight=300)
 
+### pull in .shp file and pre-computed forecasts
 zipcode_map = geopandas.read_file('geo_export_59f1d6fa-f383-4f60-991e-ec888e2e59fc.shp')
 prophet_forecast = pd.read_pickle('prophet_forecast')
 
-#nowish = pd.Timestamp(datetime.datetime.now())
-#current_time = nowish.replace(minute = 0, second = 0, microsecond = 0, tzinfo=None)
+### get current time in PST timezone
 nowish = pytz.utc.localize(datetime.datetime.utcnow()).astimezone(pytz.timezone('US/Pacific'))
 current_time = pd.Timestamp(nowish.replace(minute = 0, second = 0, microsecond = 0, tzinfo=None))
 
@@ -37,10 +37,13 @@ new_df['values'] = current_data.values[0][1:28]
 zipcode_map = zipcode_map.merge(new_df, how = 'left', on='zip')
 zipcode_map['values'] = zipcode_map['values'] * 3
 
+### pull in fire station locations
 fr_dep_locations = pd.read_csv('fire_station_location.csv')
 fr_dep_locations['locations'] = list(zip(fr_dep_locations['FS lat'], fr_dep_locations['FS lon']))
 fr_dep_locations['FS number'] = fr_dep_locations['FS number'].astype('int32')
 
+
+### make the left map of SF with fire stations
 SF_COORDINATES = (37.7749, -122.4194)
 sf_map_fire_stations = folium.Map(location = SF_COORDINATES, tiles = 'Stamen Terrain',zoom_start = 12)
 
@@ -51,8 +54,7 @@ for i in range(0,len(fr_dep_locations['FS lat'])):
 
 sf_map_fire_stations.save('sf_map.html')
 
-
-
+### now for the rest of the app - it's dependent on user inputting an address
 app.layout = html.Div(
     [
         html.H1("Should they stay or should they go?", style={'textAlign': 'center'}),
@@ -89,7 +91,7 @@ app.layout = html.Div(
     ],
 )
         
-
+### this will provide recommendation of staying or going
 @app.callback(
     dash.dependencies.Output('intermediate_value', 'children'),
     [dash.dependencies.Input('button', 'n_clicks')],
@@ -99,7 +101,7 @@ def stay_or_go(n_clicks, value):
 
     if n_clicks is not None:
         address = str(value)
-        geolocator = GoogleV3(api_key='AIzaSyDPq_4hCqJLFGiQQwh4nmn-5qVfXnc4yWc')
+        geolocator = GoogleV3(api_key='')
         location = geolocator.geocode(address) # contains full address and lat long data
         
         geolocation = Point(location[1][1], location[1][0])
@@ -113,8 +115,7 @@ def stay_or_go(n_clicks, value):
         else: 
             return "Return to fire station."
 
-
-
+### this will make and display a heat map of demand for the next hour
 @app.callback(
     dash.dependencies.Output('output-container_plot', 'children'),
     [dash.dependencies.Input('button', 'n_clicks')],
@@ -124,7 +125,7 @@ def create_suggestions(n_clicks, value):
     if n_clicks is not None:
         
         address = str(value)
-        geolocator = GoogleV3(api_key='AIzaSyDPq_4hCqJLFGiQQwh4nmn-5qVfXnc4yWc')
+        geolocator = GoogleV3(api_key='')
         location = geolocator.geocode(address) # contains full address and lat long data
         
         geolocation = Point(location[1][1], location[1][0])
@@ -148,14 +149,14 @@ def create_suggestions(n_clicks, value):
         m.save('choro.html')
 
 
-        hoods_statement = html.Div(
+        projected_map = html.Div(
                 [
                     html.Iframe(srcDoc = open('choro.html', 'r').read(), 
                      width = '100%', height = 500
                      ),
                 ])
             
-        return(hoods_statement)
+        return(projected_map)
 
 
 @app.callback(
